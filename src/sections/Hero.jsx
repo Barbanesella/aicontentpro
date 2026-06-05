@@ -131,7 +131,7 @@ export default function Hero() {
             AI Content Pro learns your brand voice and generates SEO articles, LinkedIn posts, newsletters, and scripts — indistinguishable from your best team writing.
           </p>
           <div className="fade-up-4" style={s.actions}>
-            <button style={s.btnPrimary}>Start free trial</button>
+            <button style={s.btnPrimary} onClick={() => window.location.href='/signup'}>Start free trial</button>
             <button style={s.btnSecondary}>See it in action →</button>
           </div>
           <div className="fade-up-4" style={s.statsRow}>
