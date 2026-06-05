@@ -1,6 +1,6 @@
 // PostHog Analytics
 // Замени YOUR_POSTHOG_KEY на ключ из app.posthog.com → Project Settings
-const POSTHOG_KEY = 'YOUR_POSTHOG_KEY'
+const POSTHOG_KEY = 'phc_qBSg6ZLMpwRrnY2UukFgarHaMq4iLWAeC8TLUJdcba83'
 const POSTHOG_HOST = 'https://eu.i.posthog.com'
 
 export function initAnalytics() {
