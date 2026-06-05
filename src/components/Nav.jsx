@@ -57,7 +57,7 @@ export default function Nav() {
         <li><a style={styles.link} href="#pricing">Pricing</a></li>
         <li><a style={styles.link} href="#demo">Try demo</a></li>
         <li>
-          <button style={styles.cta}>Get started</button>
+          <button style={styles.cta} onClick={() => window.location.href='/signup'}>Get started</button>
         </li>
       </ul>
     </nav>
