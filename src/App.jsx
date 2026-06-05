@@ -8,8 +8,11 @@ import HowItWorks from './sections/HowItWorks.jsx'
 import ROI from './sections/ROI.jsx'
 import Pricing from './sections/Pricing.jsx'
 import Footer from './components/Footer.jsx'
+import Signup from './pages/Signup.jsx'
 
-export default function App() {
+function Router() {
+  const path = window.location.pathname
+  if (path === '/signup' || path === '/login') return <Signup />
   return (
     <>
       <Nav />
@@ -25,4 +28,8 @@ export default function App() {
       <Footer />
     </>
   )
+}
+
+export default function App() {
+  return <Router />
 }
