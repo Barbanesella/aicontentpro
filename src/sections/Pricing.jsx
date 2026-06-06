@@ -101,8 +101,11 @@ export default function Pricing() {
   const [email, setEmail] = useState('')
 
   const openCryptoModal = (plan) => {
-    const amount = annual ? plan.priceUSD.annual : plan.priceUSD.monthly
-    setModal({ plan, amount })
+    const baseAmount = annual ? plan.priceUSD.annual : plan.priceUSD.monthly
+    // Добавляем 2% чтобы после комиссии NOWPayments (~1.3%) получить ровно базовую сумму
+    const amount = Math.ceil(baseAmount * 1.02)
+    const displayAmount = baseAmount
+    setModal({ plan, amount, displayAmount })
   }
 
   const createPayment = async () => {
@@ -214,10 +217,26 @@ export default function Pricing() {
             <div style={s.modalSub}>
               AI Content Pro — {modal.plan.name} Plan · {annual ? 'Annual' : 'Monthly'}
             </div>
+
             <div style={s.modalAmount}>
-              <span style={s.modalAmountLabel}>Amount</span>
-              <span style={s.modalAmountNum}>${modal.amount}</span>
+              <span style={s.modalAmountLabel}>Total</span>
+              <span style={s.modalAmountNum}>${modal.displayAmount}</span>
             </div>
+
+            <div style={{
+              background: 'var(--paper-2)',
+              border: '1px solid var(--paper-3)',
+              borderRadius: '10px',
+              padding: '12px 14px',
+              marginBottom: '20px',
+              fontSize: '12px',
+              color: 'var(--ink-3)',
+              lineHeight: 1.6,
+            }}>
+              ✓ Exchange fee already included in the price above.<br />
+              You pay exactly what you see — no hidden charges.
+            </div>
+
             <div style={{ marginBottom: '16px' }}>
               <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--ink-2)', display: 'block', marginBottom: '6px' }}>
                 Your email
@@ -231,12 +250,12 @@ export default function Pricing() {
               />
             </div>
             <button style={s.payBtn(loading)} onClick={createPayment} disabled={loading}>
-              {loading ? 'Creating payment...' : 'Pay with USDT →'}
+              {loading ? 'Creating payment...' : `Pay $${modal.displayAmount} in USDT →`}
             </button>
             <button style={s.cancelBtn} onClick={() => setModal(null)}>Cancel</button>
             <p style={s.cryptoNote}>
               You'll be redirected to a secure payment page.<br />
-              USDT (TRC-20 network) · Powered by NOWPayments
+              USDT · TRC-20 network · Powered by NOWPayments
             </p>
           </div>
         </div>
@@ -244,4 +263,3 @@ export default function Pricing() {
     </section>
   )
 }
-
