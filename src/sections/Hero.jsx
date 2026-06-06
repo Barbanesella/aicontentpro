@@ -163,7 +163,7 @@ export default function Hero() {
               <span style={s.metaTag}>Brand voice: on</span>
             </div>
           </div>
-          <button style={s.genBtn}>Generate another →</button>
+          <button style={s.genBtn} onClick={() => document.getElementById('demo').scrollIntoView({ behavior: 'smooth' })}>Generate another →</button>
         </div>
       </div>
     </section>
