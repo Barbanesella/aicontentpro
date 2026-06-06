@@ -2,8 +2,8 @@ import React, { useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
 // Замени на свои данные из app.supabase.com → Project Settings → API
-const SUPABASE_URL = 'YOUR_SUPABASE_URL'
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'
+const SUPABASE_URL = '783826407119-3acigieukre19u1bpos1o85ebjnl84l9.apps.googleusercontent.com'
+const SUPABASE_ANON_KEY = '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'
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
