@@ -97,7 +97,7 @@ const s = {
 export default function ROI() {
   const [articles, setArticles] = useState(20)
   const agencyCost = articles * 600
-  const ourCost = articles <= 50 ? 2500 : articles <= 200 ? 5000 : 10000
+  const ourCost = articles <= 40 ? 149 : articles <= 200 ? 399 : 899
   const savings = agencyCost - ourCost
 
   return (
@@ -143,7 +143,7 @@ export default function ROI() {
               <div style={s.compareCard(true)}>
                 <div style={s.compareLabel(true)}>AI Content Pro</div>
                 <div style={s.compareNum(true)}>€{ourCost.toLocaleString()}</div>
-                <div style={s.compareSub(true)}>flat monthly</div>
+                <div style={s.compareSub(true)}>flat for whole team</div>
               </div>
             </div>
 
