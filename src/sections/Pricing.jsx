@@ -1,9 +1,12 @@
 import React, { useState } from 'react'
 
+const NOWPAYMENTS_API_KEY = '1MSAHPS-0QXM1DX-GV63R38-82F7266'
+
 const PLANS = [
   {
     name: 'Starter',
     price: { monthly: 149, annual: 119 },
+    priceUSD: { monthly: 149, annual: 119 },
     desc: 'One decision, no CFO approval needed. Less than a single freelance article.',
     features: [
       '40 AI content generations/mo',
@@ -14,12 +17,12 @@ const PLANS = [
       'Email support',
     ],
     compare: 'vs Jasper: $39/seat + $89 Surfer SEO = $128+ for one person',
-    cta: 'Start free trial',
     highlight: false,
   },
   {
     name: 'Growth',
     price: { monthly: 399, annual: 319 },
+    priceUSD: { monthly: 399, annual: 319 },
     desc: 'The plan most mid-market SaaS teams run on. Flat price, whole team included.',
     features: [
       '200 AI content generations/mo',
@@ -31,13 +34,13 @@ const PLANS = [
       'Priority support',
     ],
     compare: 'vs Writer.com: $29/seat × 10 = $290 + no brand voice',
-    cta: 'Start free trial',
     highlight: true,
     badge: 'Most popular',
   },
   {
     name: 'Pro',
     price: { monthly: 899, annual: 719 },
+    priceUSD: { monthly: 899, annual: 719 },
     desc: 'For content-led teams who need unlimited output and full API access.',
     features: [
       'Unlimited generations',
@@ -48,7 +51,6 @@ const PLANS = [
       'Dedicated account manager',
     ],
     compare: 'vs Jasper Business: $250–350/mo + hidden costs',
-    cta: 'Start free trial',
     highlight: false,
   },
 ]
@@ -75,13 +77,69 @@ const s = {
   featureList: { listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' },
   feature: (h) => ({ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: h ? 'rgba(255,255,255,0.75)' : 'var(--ink-2)' }),
   check: (h) => ({ width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0, background: h ? 'rgba(255,255,255,0.1)' : 'var(--green-light)', color: h ? 'rgba(255,255,255,0.7)' : 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700 }),
+  ctaRow: { display: 'flex', flexDirection: 'column', gap: '8px' },
   cta: (h) => ({ width: '100%', padding: '14px', background: h ? 'var(--accent)' : 'var(--ink)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: 500, cursor: 'pointer', transition: 'opacity 0.2s', boxShadow: h ? '0 2px 16px rgba(212,82,26,0.35)' : 'none' }),
+  cryptoBtn: (h) => ({ width: '100%', padding: '11px', background: 'transparent', color: h ? 'rgba(255,255,255,0.6)' : 'var(--ink-3)', border: `1.5px solid ${h ? 'rgba(255,255,255,0.15)' : 'var(--paper-3)'}`, borderRadius: '10px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }),
   compare: (h) => ({ textAlign: 'center', fontSize: '12px', color: h ? 'rgba(255,255,255,0.3)' : 'var(--ink-3)', marginTop: '12px' }),
   footer: { textAlign: 'center', marginTop: '36px', fontSize: '14px', color: 'var(--ink-3)' },
+  modal: { position: 'fixed', inset: 0, background: 'rgba(15,14,12,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' },
+  modalCard: { background: '#fff', borderRadius: '20px', padding: '40px', maxWidth: '420px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
+  modalTitle: { fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--ink)', marginBottom: '8px', fontStyle: 'italic' },
+  modalSub: { fontSize: '14px', color: 'var(--ink-3)', marginBottom: '24px' },
+  modalAmount: { background: 'var(--paper-2)', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  modalAmountLabel: { fontSize: '13px', color: 'var(--ink-3)' },
+  modalAmountNum: { fontFamily: 'var(--font-display)', fontSize: '28px', color: 'var(--ink)', letterSpacing: '-0.02em' },
+  payBtn: (loading) => ({ width: '100%', padding: '14px', background: loading ? 'rgba(212,82,26,0.5)' : 'var(--accent)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: 500, cursor: loading ? 'not-allowed' : 'pointer', marginBottom: '12px', boxShadow: '0 2px 12px rgba(212,82,26,0.3)' }),
+  cancelBtn: { width: '100%', padding: '12px', background: 'transparent', color: 'var(--ink-3)', border: '1.5px solid var(--paper-3)', borderRadius: '10px', fontSize: '14px', cursor: 'pointer' },
+  cryptoNote: { fontSize: '12px', color: 'var(--ink-3)', textAlign: 'center', marginTop: '16px', lineHeight: 1.6 },
 }
 
 export default function Pricing() {
   const [annual, setAnnual] = useState(false)
+  const [modal, setModal] = useState(null) // { plan, amount }
+  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState('')
+
+  const openCryptoModal = (plan) => {
+    const amount = annual ? plan.priceUSD.annual : plan.priceUSD.monthly
+    setModal({ plan, amount })
+  }
+
+  const createPayment = async () => {
+    if (!email) return alert('Please enter your email')
+    setLoading(true)
+    try {
+      const res = await fetch('https://api.nowpayments.io/v1/invoice', {
+        method: 'POST',
+        headers: {
+          'x-api-key': NOWPAYMENTS_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          price_amount: modal.amount,
+          price_currency: 'usd',
+          pay_currency: 'usdttrc20',
+          order_id: `${modal.plan.name.toLowerCase()}-${Date.now()}`,
+          order_description: `AI Content Pro — ${modal.plan.name} Plan`,
+          ipn_callback_url: 'https://aicontentpro.app/api/payment-callback',
+          success_url: 'https://aicontentpro.app/dashboard',
+          cancel_url: 'https://aicontentpro.app/#pricing',
+          is_fixed_rate: true,
+          is_fee_paid_by_user: false,
+        }),
+      })
+      const data = await res.json()
+      if (data.invoice_url) {
+        window.location.href = data.invoice_url
+      } else {
+        alert('Payment error. Please try again.')
+      }
+    } catch (err) {
+      alert('Connection error. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <section id="pricing" style={s.section}>
@@ -125,15 +183,65 @@ export default function Pricing() {
                   </li>
                 ))}
               </ul>
-              <button style={s.cta(plan.highlight)}>{plan.cta}</button>
+              <div style={s.ctaRow}>
+                <button
+                  style={s.cta(plan.highlight)}
+                  onClick={() => window.location.href = '/signup'}
+                >
+                  Start free trial
+                </button>
+                <button
+                  style={s.cryptoBtn(plan.highlight)}
+                  onClick={() => openCryptoModal(plan)}
+                >
+                  ₮ Pay with USDT
+                </button>
+              </div>
               <p style={s.compare(plan.highlight)}>{plan.compare}</p>
             </div>
           ))}
         </div>
+
         <p style={s.footer}>
           All plans include a 14-day free trial · No credit card required · Cancel anytime · Flat team pricing — never per-seat
         </p>
       </div>
+
+      {modal && (
+        <div style={s.modal} onClick={() => setModal(null)}>
+          <div style={s.modalCard} onClick={e => e.stopPropagation()}>
+            <div style={s.modalTitle}>Pay with USDT</div>
+            <div style={s.modalSub}>
+              AI Content Pro — {modal.plan.name} Plan · {annual ? 'Annual' : 'Monthly'}
+            </div>
+            <div style={s.modalAmount}>
+              <span style={s.modalAmountLabel}>Amount</span>
+              <span style={s.modalAmountNum}>${modal.amount}</span>
+            </div>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--ink-2)', display: 'block', marginBottom: '6px' }}>
+                Your email
+              </label>
+              <input
+                type="email"
+                placeholder="you@company.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                style={{ width: '100%', padding: '11px 14px', border: '1.5px solid var(--paper-3)', borderRadius: '10px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+              />
+            </div>
+            <button style={s.payBtn(loading)} onClick={createPayment} disabled={loading}>
+              {loading ? 'Creating payment...' : 'Pay with USDT →'}
+            </button>
+            <button style={s.cancelBtn} onClick={() => setModal(null)}>Cancel</button>
+            <p style={s.cryptoNote}>
+              You'll be redirected to a secure payment page.<br />
+              USDT (TRC-20 network) · Powered by NOWPayments
+            </p>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
+
