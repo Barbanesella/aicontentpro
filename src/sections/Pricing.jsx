@@ -101,10 +101,10 @@ export default function Pricing() {
   const [email, setEmail] = useState('')
 
   const openCryptoModal = (plan) => {
-    const baseAmount = annual ? plan.priceUSD.annual : plan.priceUSD.monthly
-    // Добавляем 2% чтобы после комиссии NOWPayments (~1.3%) получить ровно базовую сумму
-    const amount = Math.ceil(baseAmount * 1.02)
-    const displayAmount = baseAmount
+    const displayAmount = annual ? plan.priceUSD.annual : plan.priceUSD.monthly
+    // Вычитаем комиссию NOWPayments (~1.3%) заранее
+    // чтобы клиент заплатил ровно displayAmount
+    const amount = Math.round(displayAmount / 1.013)
     setModal({ plan, amount, displayAmount })
   }
 
