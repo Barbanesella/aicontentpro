@@ -8,7 +8,7 @@ const s = {
   },
   inner: { maxWidth: '1200px', margin: '0 auto' },
   top: {
-    display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr',
+    display: 'grid', gridTemplateColumns: '2fr 1fr 1fr',
     gap: '48px', marginBottom: '48px',
   },
   logo: {
@@ -29,7 +29,7 @@ const s = {
   links: { listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' },
   link: {
     fontSize: '14px', color: 'rgba(255,255,255,0.5)',
-    cursor: 'pointer', transition: 'color 0.2s',
+    cursor: 'pointer', textDecoration: 'none',
   },
   divider: {
     height: '1px', background: 'rgba(255,255,255,0.08)', marginBottom: '28px',
@@ -55,25 +55,17 @@ export default function Footer() {
           <div>
             <div style={s.colTitle}>Product</div>
             <ul style={s.links}>
-              {['How it works', 'Brand Voice Engine', 'API docs', 'Integrations', 'Changelog'].map(l => (
-                <li key={l}><a style={s.link}>{l}</a></li>
-              ))}
+              <li><a href="#how-it-works" style={s.link}>How it works</a></li>
+              <li><a href="#demo" style={s.link}>Live demo</a></li>
+              <li><a href="#pricing" style={s.link}>Pricing</a></li>
+              <li><a href="/signup" style={s.link}>Get started</a></li>
             </ul>
           </div>
           <div>
-            <div style={s.colTitle}>Company</div>
+            <div style={s.colTitle}>Contact</div>
             <ul style={s.links}>
-              {['About', 'Blog', 'Careers', 'Press', 'Contact'].map(l => (
-                <li key={l}><a style={s.link}>{l}</a></li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <div style={s.colTitle}>Resources</div>
-            <ul style={s.links}>
-              {['Documentation', 'Templates', 'Case studies', 'Pricing', 'Status'].map(l => (
-                <li key={l}><a style={s.link}>{l}</a></li>
-              ))}
+              <li><a href="mailto:hello@aicontentpro.app" style={s.link}>hello@aicontentpro.app</a></li>
+              <li><a href="/signup" style={s.link}>Start free trial</a></li>
             </ul>
           </div>
         </div>
@@ -81,12 +73,12 @@ export default function Footer() {
         <div style={s.bottom}>
           <span style={s.copyright}>© 2026 AI Content Pro. All rights reserved.</span>
           <div style={s.legal}>
-            {['Privacy Policy', 'Terms of Service', 'Refund Policy'].map(l => (
-              <a key={l} style={s.legalLink}>{l}</a>
-            ))}
+            <span style={s.legalLink}>Privacy Policy</span>
+            <span style={s.legalLink}>Terms of Service</span>
           </div>
         </div>
       </div>
     </footer>
   )
 }
+
