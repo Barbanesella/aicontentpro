@@ -256,6 +256,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        <button onClick={async () => { const res = await fetch('/api/payment-webhook', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ payment_status: 'finished', order_id: 'test-' + Date.now(), price_amount: '399', payer_email: user?.email, payment_id: 'test-' + Date.now() }) }); const data = await res.json(); alert(JSON.stringify(data)) }} style={{ marginTop: '20px', padding: '10px 20px', background: 'green', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Test webhook</button>
       </div>
     </div>
   )
