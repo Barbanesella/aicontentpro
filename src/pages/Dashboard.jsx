@@ -85,8 +85,10 @@ export default function Dashboard() {
     const { data, error } = await supabase
       .from('subscriptions')
       .select('*')
-      .eq('user_id', user.id)
-      .single()
+.or(`user_id.eq.${user.id},email.eq.${user.email}`)
+.order('generations_limit', { ascending: false })
+.limit(1)
+.single()
 
     if (data) {
       setSubscription(data)
