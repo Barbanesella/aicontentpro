@@ -5,11 +5,11 @@ const SUPABASE_URL = 'https://ihlcpvwbnlntgmxgjazs.supabase.co/'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlobGNwdndibmxudGdteGdqYXpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Nzc3NzAsImV4cCI6MjA5NjI1Mzc3MH0.CyetHuMwQvQze8xunQb8gyKgF4ANxw7OVOa4cauuzX8'
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-const PLANS = {
-  starter: { label: 'Starter', limit: 40 },
-  growth: { label: 'Growth', limit: 200 },
-  pro: { label: 'Pro', limit: 999999 },
-  trial: { label: 'Free Trial', limit: 5 },
+const PLAN_LABELS = {
+  trial: 'Free Trial',
+  starter: 'Starter',
+  growth: 'Growth',
+  pro: 'Pro',
 }
 
 const CONTENT_TYPES = [
@@ -35,7 +35,6 @@ const s = {
   typeBtn: (active) => ({ padding: '10px 14px', borderRadius: '10px', background: active ? 'var(--accent-light)' : 'var(--paper-2)', border: `1.5px solid ${active ? 'var(--accent)' : 'transparent'}`, cursor: 'pointer', fontSize: '13px', fontWeight: active ? 500 : 400, color: active ? 'var(--accent)' : 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)', transition: 'all .2s' }),
   label: { fontSize: '13px', fontWeight: 500, color: 'var(--ink-2)', marginBottom: '6px', display: 'block' },
   input: { width: '100%', padding: '11px 14px', border: '1.5px solid var(--paper-3)', borderRadius: '10px', fontSize: '14px', color: 'var(--ink)', outline: 'none', fontFamily: 'var(--font-body)', marginBottom: '16px', boxSizing: 'border-box' },
-  textarea: { width: '100%', padding: '11px 14px', border: '1.5px solid var(--paper-3)', borderRadius: '10px', fontSize: '14px', color: 'var(--ink)', outline: 'none', fontFamily: 'var(--font-body)', marginBottom: '16px', boxSizing: 'border-box', minHeight: '80px', resize: 'vertical' },
   generateBtn: (loading) => ({ width: '100%', padding: '13px', background: loading ? 'rgba(212,82,26,.5)' : 'var(--accent)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: 500, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-body)', boxShadow: loading ? 'none' : '0 2px 12px rgba(212,82,26,.25)' }),
   outputBox: { marginTop: '24px', background: 'var(--paper)', borderRadius: '12px', padding: '20px', border: '1px solid var(--paper-3)', minHeight: '200px' },
   outputText: { fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.8, whiteSpace: 'pre-line' },
@@ -56,11 +55,13 @@ const s = {
   historyDate: { fontSize: '11px', color: 'var(--ink-3)' },
   emptyHistory: { fontSize: '13px', color: 'var(--ink-3)', textAlign: 'center', padding: '20px 0' },
   loadingScreen: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--paper)', fontFamily: 'var(--font-body)', color: 'var(--ink-3)', fontSize: '15px' },
+  error: { background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#c53030', marginBottom: '16px' },
 }
 
 export default function Dashboard() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [subscription, setSubscription] = useState(null)
   const [type, setType] = useState('seo')
   const [topic, setTopic] = useState('')
   const [tone, setTone] = useState('')
@@ -68,53 +69,64 @@ export default function Dashboard() {
   const [result, setResult] = useState('')
   const [copied, setCopied] = useState(false)
   const [history, setHistory] = useState([])
-  const [usageCount, setUsageCount] = useState(0)
-  const [plan] = useState('trial')
   const [error, setError] = useState('')
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        window.location.href = '/signup'
-        return
-      }
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) { window.location.href = '/signup'; return }
       setUser(session.user)
+      await loadSubscription(session.user)
       loadHistory(session.user.id)
-      loadUsage(session.user.id)
       setLoading(false)
     })
   }, [])
 
-  const loadHistory = async (userId) => {
+  const loadSubscription = async (user) => {
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', user.id)
+      .single()
+
+    if (data) {
+      setSubscription(data)
+    } else {
+      // Создаём trial если нет подписки
+      const { data: newSub } = await supabase
+        .from('subscriptions')
+        .insert({ user_id: user.id, email: user.email, plan: 'trial', generations_limit: 5, generations_used: 0 })
+        .select()
+        .single()
+      setSubscription(newSub)
+    }
+  }
+
+  const loadHistory = (userId) => {
     const saved = localStorage.getItem(`history_${userId}`)
     if (saved) setHistory(JSON.parse(saved))
   }
 
-  const loadUsage = async (userId) => {
-    const key = `usage_${userId}_${new Date().getMonth()}`
-    const count = parseInt(localStorage.getItem(key) || '0')
-    setUsageCount(count)
-  }
-
-  const saveGeneration = (userId, type, topic, content) => {
+  const saveToHistory = (userId, type, topic, content) => {
     const item = { id: Date.now(), type, topic, content, date: new Date().toISOString() }
     const saved = localStorage.getItem(`history_${userId}`)
     const arr = saved ? JSON.parse(saved) : []
     const updated = [item, ...arr].slice(0, 20)
     localStorage.setItem(`history_${userId}`, JSON.stringify(updated))
     setHistory(updated)
-
-    const key = `usage_${userId}_${new Date().getMonth()}`
-    const newCount = usageCount + 1
-    localStorage.setItem(key, newCount.toString())
-    setUsageCount(newCount)
   }
 
   const generate = async () => {
     if (generating) return
     if (!topic.trim()) return setError('Please enter a topic.')
-    const limit = PLANS[plan].limit
-    if (usageCount >= limit) return setError(`You've reached your ${limit} generation limit. Please upgrade.`)
+    if (!subscription) return setError('Loading subscription...')
+
+    const used = subscription.generations_used
+    const limit = subscription.generations_limit
+
+    if (used >= limit) {
+      setError(`You've used all ${limit} generations. Please upgrade your plan.`)
+      return
+    }
 
     setGenerating(true)
     setResult('')
@@ -127,12 +139,23 @@ export default function Dashboard() {
         body: JSON.stringify({ type, topic, tone }),
       })
       const data = await res.json()
+
       if (!res.ok || data.error) {
         setError(data.error || 'Something went wrong.')
         return
       }
+
       setResult(data.content)
-      saveGeneration(user.id, type, topic, data.content)
+      saveToHistory(user.id, type, topic, data.content)
+
+      // Обновляем счётчик в Supabase
+      const newUsed = used + 1
+      await supabase
+        .from('subscriptions')
+        .update({ generations_used: newUsed, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id)
+      setSubscription(prev => ({ ...prev, generations_used: newUsed }))
+
     } catch {
       setError('Connection error. Please try again.')
     } finally {
@@ -153,15 +176,17 @@ export default function Dashboard() {
 
   if (loading) return <div style={s.loadingScreen}>Loading...</div>
 
-  const planInfo = PLANS[plan]
-  const usagePct = (usageCount / planInfo.limit) * 100
+  const used = subscription?.generations_used || 0
+  const limit = subscription?.generations_limit || 5
+  const plan = subscription?.plan || 'trial'
+  const usagePct = (used / limit) * 100
 
   return (
     <div style={s.page}>
       <nav style={s.nav}>
         <a href="/" style={s.logo}>AI Content <span style={s.logoSpan}>Pro</span></a>
         <div style={s.navRight}>
-          <span style={s.planBadge}>{planInfo.label}</span>
+          <span style={s.planBadge}>{PLAN_LABELS[plan] || plan}</span>
           <span style={{ fontSize: '13px', color: 'var(--ink-3)' }}>{user?.email}</span>
           <button style={s.signOutBtn} onClick={signOut}>Sign out</button>
         </div>
@@ -169,10 +194,8 @@ export default function Dashboard() {
 
       <div style={s.body}>
         <div style={s.grid}>
-          {/* Generator */}
           <div style={s.card}>
             <div style={s.cardTitle}>Generate content</div>
-
             <div style={s.typeGrid}>
               {CONTENT_TYPES.map(ct => (
                 <button key={ct.id} style={s.typeBtn(type === ct.id)}
@@ -181,34 +204,17 @@ export default function Dashboard() {
                 </button>
               ))}
             </div>
-
             <label style={s.label}>Topic or headline</label>
-            <input
-              style={s.input}
-              placeholder="e.g. why B2B content fails to convert"
-              value={topic}
-              onChange={e => setTopic(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && generate()}
-            />
-
+            <input style={s.input} placeholder="e.g. why B2B content fails to convert"
+              value={topic} onChange={e => setTopic(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && generate()} />
             <label style={s.label}>Brand tone (optional)</label>
-            <input
-              style={s.input}
-              placeholder="e.g. direct, no corporate jargon, like a practitioner"
-              value={tone}
-              onChange={e => setTone(e.target.value)}
-            />
-
-            {error && (
-              <div style={{ background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#c53030', marginBottom: '16px' }}>
-                ⚠️ {error}
-              </div>
-            )}
-
+            <input style={s.input} placeholder="e.g. direct, no corporate jargon"
+              value={tone} onChange={e => setTone(e.target.value)} />
+            {error && <div style={s.error}>⚠️ {error}</div>}
             <button style={s.generateBtn(generating)} onClick={generate} disabled={generating}>
               {generating ? 'Generating...' : 'Generate →'}
             </button>
-
             {result && (
               <div style={s.outputBox}>
                 <div style={s.outputText}>{result}</div>
@@ -219,16 +225,14 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Sidebar */}
           <div style={s.sidebar}>
-            {/* Usage */}
             <div style={s.usageCard}>
               <div style={s.usageTitle}>Usage this month</div>
-              <div style={s.usageNums}>{usageCount} <span style={{ fontSize: '20px', color: 'var(--ink-3)' }}>/ {planInfo.limit === 999999 ? '∞' : planInfo.limit}</span></div>
-              <div style={s.usageSub}>generations used</div>
-              <div style={s.bar}>
-                <div style={s.barFill(usagePct)} />
+              <div style={s.usageNums}>
+                {used} <span style={{ fontSize: '20px', color: 'var(--ink-3)' }}>/ {limit === 999999 ? '∞' : limit}</span>
               </div>
+              <div style={s.usageSub}>generations used</div>
+              <div style={s.bar}><div style={s.barFill(usagePct)} /></div>
               {plan !== 'pro' && (
                 <button style={s.upgradeBtn} onClick={() => window.location.href = '/#pricing'}>
                   Upgrade plan →
@@ -236,7 +240,6 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* History */}
             <div style={s.historyCard}>
               <div style={s.historyTitle}>Recent generations</div>
               {history.length === 0 ? (
@@ -257,3 +260,4 @@ export default function Dashboard() {
     </div>
   )
 }
+
