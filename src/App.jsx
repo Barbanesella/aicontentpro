@@ -9,10 +9,12 @@ import ROI from './sections/ROI.jsx'
 import Pricing from './sections/Pricing.jsx'
 import Footer from './components/Footer.jsx'
 import Signup from './pages/Signup.jsx'
+import Dashboard from './pages/Dashboard.jsx'
 
 function Router() {
   const path = window.location.pathname
   if (path === '/signup' || path === '/login') return <Signup />
+  if (path === '/dashboard') return <Dashboard />
   return (
     <>
       <Nav />
