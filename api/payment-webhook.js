@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     const payload = req.body
 
     // Верификация подписи NOWPayments
-    const nowpaymentsIpnSecret = null //process.env.NOWPAYMENTS_IPN_SECRET
+    const nowpaymentsIpnSecret = process.env.NOWPAYMENTS_IPN_SECRET
     if (nowpaymentsIpnSecret) {
       const receivedSig = req.headers['x-nowpayments-sig']
       const sortedPayload = JSON.stringify(
