@@ -227,12 +227,12 @@ export default function Pricing() {
                   ₮ Pay with USDT
                 </button>
                 <button
-  style={s.cryptoBtn(plan.highlight)}
-  onClick={() => payWithPayeer(plan)}
-  disabled={payeerLoading}
->
-  💳 Pay with Payeer
-</button>
+                  style={s.cryptoBtn(plan.highlight)}
+                  onClick={() => payWithPayeer(plan)}
+                  disabled={payeerLoading}
+                >
+                  💳 Pay with Payeer
+                </button>
               </div>
               </div>
               <p style={s.compare(plan.highlight)}>{plan.compare}</p>
